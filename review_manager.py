@@ -99,7 +99,7 @@ elif st.session_state.page == "task_submission":
             if not task_link.strip():
                 st.error("Task Link is required. Please provide a valid link.")
             else:
-                st.info("Submitting your data... Please wait.")
+                st.info("Submitting task... Please click 'Submit' again to confirm.")
                 row_data = [
                     date.strftime("%Y-%m-%d"),
                     batch_no or "N/A",
@@ -120,7 +120,8 @@ elif st.session_state.page == "submission_success":
         unsafe_allow_html=True,
     )
     st.markdown(
-        f'<p style="text-align: center;"><a href="{GOOGLE_SHEETS_URL}" target="_blank">Click here to edit manually in the Google Sheet</a></p>',
+        f'<p style="text-align: center; font-size: 16px;'>Your data has been successfully submitted. If you need to make changes, click below:</p>'
+        f'<p style="text-align: center;"><a href="{GOOGLE_SHEETS_URL}" target="_blank">Edit manually in Google Sheets</a></p>',
         unsafe_allow_html=True,
     )
     st.button("Submit Another Task", on_click=reset_submission)

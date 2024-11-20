@@ -34,6 +34,10 @@ def upload_to_gsheet(sheet_url, sheet_name, data):
     worksheet = connect_to_gsheet(sheet_url, sheet_name)
     worksheet.insert_row(data, index=2)  # Insert data at the second row, below the header
 
+# Callback function for form submission
+def handle_submission():
+    st.session_state.submitted = True
+
 # Initialize session state
 if "page" not in st.session_state:
     st.session_state.page = "welcome"
@@ -66,7 +70,6 @@ elif st.session_state.page == "task_submission":
     trainer_name = st.session_state.trainer_name
     st.success(f"Welcome, {trainer_name}! Please proceed to upload your task details.")
 
-    # Back Button
     if st.button("Back"):
         st.session_state.page = "welcome"
 
@@ -91,12 +94,14 @@ elif st.session_state.page == "task_submission":
             total_login_hours = st.text_input("TOTAL LOGIN HOURS (TILL NOW)")
             comments = st.text_area("COMMENTS (Optional)")
 
-            submitted = st.form_submit_button("Submit")
+            # Use callback for submit button
+            st.form_submit_button("Submit", on_click=handle_submission)
 
         # Handle Form Submission
-        if submitted:
+        if st.session_state.submitted:
             if not task_link.strip():
                 st.error("Task Link is required.")
+                st.session_state.submitted = False
             else:
                 try:
                     row_data = [
@@ -109,6 +114,6 @@ elif st.session_state.page == "task_submission":
                         comments or "No comments"
                     ]
                     upload_to_gsheet(GOOGLE_SHEETS_URL, trainer_name, row_data)
-                    st.session_state.submitted = True
+                    st.session_state.page = "submitted"
                 except Exception as e:
                     st.error(f"Error uploading to Google Sheets: {e}")

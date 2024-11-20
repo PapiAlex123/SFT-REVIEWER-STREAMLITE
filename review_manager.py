@@ -36,6 +36,7 @@ def upload_to_gsheet(sheet_url, sheet_name, data):
 def go_to_task_submission(trainer_name):
     st.session_state.trainer_name = trainer_name
     st.session_state.page = "task_submission"
+    st.session_state.submitted = False  # Reset submission state when navigating
 
 def go_to_welcome():
     st.session_state.page = "welcome"

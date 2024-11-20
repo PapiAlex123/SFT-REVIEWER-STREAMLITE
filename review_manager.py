@@ -45,7 +45,7 @@ if "submitted" not in st.session_state:
 # Streamlit app
 st.title("Trainer Task Manager")
 
-# Page: Welcome
+# Navigation: Welcome Page
 if st.session_state.page == "welcome":
     st.markdown("<h2 style='text-align: center;'>Who is this?</h2>", unsafe_allow_html=True)
     st.markdown(
@@ -58,19 +58,21 @@ if st.session_state.page == "welcome":
         if trainer_name:
             st.session_state.trainer_name = trainer_name
             st.session_state.page = "task_submission"
-            st.experimental_set_query_params(page="task_submission")
+            st.experimental_rerun()  # Force a complete app rerun to reflect changes
         else:
             st.error("Please select a trainer before proceeding.")
 
-# Page: Task Submission
+# Navigation: Task Submission
 elif st.session_state.page == "task_submission":
     trainer_name = st.session_state.trainer_name
     st.success(f"Welcome, {trainer_name}! Please proceed to upload your task details.")
 
+    # Back Button
     if st.button("Back"):
         st.session_state.page = "welcome"
-        st.experimental_set_query_params(page="welcome")
+        st.experimental_rerun()
 
+    # Submission Success Page
     if st.session_state.submitted:
         st.markdown("<h1 style='text-align: center; color: green;'>Well done! Your data has been updated 🎉</h1>", unsafe_allow_html=True)
         st.markdown(
@@ -79,8 +81,9 @@ elif st.session_state.page == "task_submission":
         )
         if st.button("Submit Another Task"):
             st.session_state.submitted = False
-            st.session_state.page = "task_submission"
-            st.experimental_set_query_params(page="task_submission")
+            st.experimental_rerun()
+
+    # Task Submission Form
     else:
         with st.form("sheet_update_form"):
             date = st.date_input("Date", value=datetime.today())
@@ -93,6 +96,7 @@ elif st.session_state.page == "task_submission":
 
             submitted = st.form_submit_button("Submit")
 
+        # Handle Form Submission
         if submitted:
             if not task_link.strip():
                 st.error("Task Link is required.")
@@ -109,7 +113,6 @@ elif st.session_state.page == "task_submission":
                     ]
                     upload_to_gsheet(GOOGLE_SHEETS_URL, trainer_name, row_data)
                     st.session_state.submitted = True
-                    st.session_state.page = "task_submission"
-                    st.experimental_set_query_params(page="task_submission")
+                    st.experimental_rerun()
                 except Exception as e:
                     st.error(f"Error uploading to Google Sheets: {e}")

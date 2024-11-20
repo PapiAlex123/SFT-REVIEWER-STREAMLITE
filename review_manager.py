@@ -120,9 +120,10 @@ elif st.session_state.page == "submission_success":
         unsafe_allow_html=True,
     )
     st.markdown(
-        f'<p style="text-align: center; text-align: center; font-size: 16px;'>Your data has been successfully submitted. If you need to make changes, click below:</p>'
-        f'<p style="text-align: center;"><a href="{GOOGLE_SHEETS_URL}" target="_blank">Edit manually in Google Sheets</a></p>',
-        unsafe_allow_html=True,
-    )
+    f'<p style="text-align: center; font-size: 16px;">Your data has been successfully submitted. If you need to make changes, click below:</p>'
+    f'<p style="text-align: center;"><a href="{GOOGLE_SHEETS_URL}" target="_blank">Edit manually in Google Sheets</a></p>',
+    unsafe_allow_html=True,
+)
+
     st.button("Submit Another Task", on_click=reset_submission)
     st.button("Back to Welcome", on_click=go_to_welcome)

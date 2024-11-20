@@ -42,11 +42,6 @@ if "trainer_name" not in st.session_state:
 if "submitted" not in st.session_state:
     st.session_state.submitted = False
 
-# Update the page based on query parameters
-query_params = st.experimental_get_query_params()
-if "page" in query_params:
-    st.session_state.page = query_params["page"][0]
-
 # Streamlit app
 st.title("Trainer Task Manager")
 
@@ -63,7 +58,7 @@ if st.session_state.page == "welcome":
         if trainer_name:
             st.session_state.trainer_name = trainer_name
             st.session_state.page = "task_submission"
-            st.experimental_set_query_params(page="task_submission")
+            st.experimental_rerun()  # Force immediate rerun
         else:
             st.error("Please select a trainer before proceeding.")
 
@@ -74,7 +69,7 @@ elif st.session_state.page == "task_submission":
 
     if st.button("Back"):
         st.session_state.page = "welcome"
-        st.experimental_set_query_params(page="welcome")
+        st.experimental_rerun()  # Force immediate rerun
 
     if st.session_state.submitted:
         st.markdown("<h1 style='text-align: center; color: green;'>Well done! Your data has been updated 🎉</h1>", unsafe_allow_html=True)
@@ -84,7 +79,7 @@ elif st.session_state.page == "task_submission":
         )
         if st.button("Submit Another Task"):
             st.session_state.submitted = False
-            st.experimental_set_query_params(page="task_submission")
+            st.experimental_rerun()
     else:
         with st.form("sheet_update_form"):
             date = st.date_input("Date", value=datetime.today())
@@ -113,6 +108,6 @@ elif st.session_state.page == "task_submission":
                     ]
                     upload_to_gsheet(GOOGLE_SHEETS_URL, trainer_name, row_data)
                     st.session_state.submitted = True
-                    st.experimental_set_query_params(page="task_submission")
+                    st.experimental_rerun()  # Force navigation to the success page
                 except Exception as e:
                     st.error(f"Error uploading to Google Sheets: {e}")

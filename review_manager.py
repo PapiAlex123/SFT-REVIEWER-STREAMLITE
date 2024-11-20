@@ -33,16 +33,22 @@ def upload_to_gsheet(sheet_url, sheet_name, data):
     worksheet.insert_row(data, index=2)  # Insert data at the second row, below the header
 
 # Navigation helpers
-def go_to_page(page_name, trainer_name=None):
-    """Navigate to a specific page and optionally set the trainer."""
-    st.session_state.page = page_name
-    if trainer_name is not None:
-        st.session_state.trainer_name = trainer_name
-    if page_name == "task_submission":
-        st.session_state.submitted = False  # Reset submission state
+def go_to_task_submission():
+    """Navigate to the task submission page."""
+    st.session_state.page = "task_submission"
+    st.session_state.submitted = False
 
-# Submit task handler
+def go_to_welcome():
+    """Navigate back to the welcome page."""
+    st.session_state.page = "welcome"
+
+def reset_submission():
+    """Reset the submission state and navigate to the task submission page."""
+    st.session_state.submitted = False
+    st.session_state.page = "task_submission"
+
 def handle_submission(data, trainer_name):
+    """Upload data and navigate to the success page."""
     try:
         upload_to_gsheet(GOOGLE_SHEETS_URL, trainer_name, data)
         st.session_state.submitted = True
@@ -69,16 +75,14 @@ if st.session_state.page == "welcome":
         unsafe_allow_html=True,
     )
     trainer_name = st.selectbox("Select your name to proceed", options=SHEET_NAMES, key="trainer_select")
-    if st.button("Next"):
-        go_to_page("task_submission", trainer_name)
+    st.button("Next", on_click=lambda: (st.session_state.update({"trainer_name": trainer_name}), go_to_task_submission()))
 
 # Page: Task Submission
 elif st.session_state.page == "task_submission":
     trainer_name = st.session_state.trainer_name
     st.success(f"Welcome, {trainer_name}! Please proceed to upload your task details.")
 
-    if st.button("Back to Welcome"):
-        go_to_page("welcome")
+    st.button("Back to Welcome", on_click=go_to_welcome)
 
     # Submission Form
     with st.form("sheet_update_form"):
@@ -117,7 +121,5 @@ elif st.session_state.page == "submission_success":
         f'<p style="text-align: center;"><a href="{GOOGLE_SHEETS_URL}" target="_blank">Click here to edit manually in the Google Sheet</a></p>',
         unsafe_allow_html=True,
     )
-    if st.button("Submit Another Task"):
-        go_to_page("task_submission")
-    if st.button("Back to Welcome"):
-        go_to_page("welcome")
+    st.button("Submit Another Task", on_click=reset_submission)
+    st.button("Back to Welcome", on_click=go_to_welcome)

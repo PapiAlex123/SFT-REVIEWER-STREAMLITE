@@ -53,15 +53,13 @@ if st.session_state.page == "welcome":
         if trainer_name:
             st.session_state.trainer_name = trainer_name
             st.session_state.page = "task_submission"
-        else:
-            st.error("Please select a trainer before proceeding.")
 
 # Page: Task Submission
 elif st.session_state.page == "task_submission":
     trainer_name = st.session_state.trainer_name
     st.success(f"Welcome, {trainer_name}! Please proceed to upload your task details.")
 
-    if st.button("Back"):
+    if st.button("Back to Welcome"):
         st.session_state.page = "welcome"
 
     if st.session_state.submitted:
@@ -71,8 +69,13 @@ elif st.session_state.page == "task_submission":
             "<div style='text-align: center;'><img src='https://i.giphy.com/media/xT77XWum9yH7zNkFW0/giphy.gif' width='300'></div>",
             unsafe_allow_html=True,
         )
+        st.markdown(
+            f'<p style="text-align: center;"><a href="{GOOGLE_SHEETS_URL}" target="_blank">Click here to edit manually in the Google Sheet</a></p>',
+            unsafe_allow_html=True,
+        )
         if st.button("Submit Another Task"):
             st.session_state.submitted = False
+            st.session_state.page = "task_submission"
     else:
         # Submission Form
         with st.form("sheet_update_form"):

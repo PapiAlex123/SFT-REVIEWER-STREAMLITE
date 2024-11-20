@@ -18,7 +18,6 @@ def extract_spreadsheet_id(sheet_url):
 
 # Authenticate with Google Sheets using Streamlit secrets
 def connect_to_gsheet(sheet_url, sheet_name):
-    # Use Streamlit secrets for authentication
     service_account_info = st.secrets["google_service_account"]
     creds = Credentials.from_service_account_info(
         service_account_info,
@@ -33,16 +32,34 @@ def upload_to_gsheet(sheet_url, sheet_name, data):
     worksheet = connect_to_gsheet(sheet_url, sheet_name)
     worksheet.insert_row(data, index=2)  # Insert data at the second row, below the header
 
-# Streamlit app
-st.title("Trainer Task Manager")
+# Callback functions for navigation and submission
+def go_to_task_submission():
+    st.session_state.page = "task_submission"
 
-# Manage page navigation using session state
+def go_to_welcome():
+    st.session_state.page = "welcome"
+
+def reset_submission():
+    st.session_state.submitted = False
+    st.session_state.page = "task_submission"
+
+def submit_task(data, trainer_name):
+    try:
+        upload_to_gsheet(GOOGLE_SHEETS_URL, trainer_name, data)
+        st.session_state.submitted = True
+    except Exception as e:
+        st.error(f"Error uploading to Google Sheets: {e}")
+
+# Initialize session state
 if "page" not in st.session_state:
     st.session_state.page = "welcome"
 if "trainer_name" not in st.session_state:
     st.session_state.trainer_name = None
 if "submitted" not in st.session_state:
     st.session_state.submitted = False
+
+# Streamlit app
+st.title("Trainer Task Manager")
 
 # Page: Welcome
 if st.session_state.page == "welcome":
@@ -51,20 +68,17 @@ if st.session_state.page == "welcome":
         "<div style='text-align: center;'><img src='https://i.giphy.com/media/fnuSiwXMTV3zmYDf6k/giphy.gif' width='300'></div>",
         unsafe_allow_html=True,
     )
-    trainer_name = st.selectbox("Select your name to proceed", options=SHEET_NAMES)
+    trainer_name = st.selectbox("Select your name to proceed", options=SHEET_NAMES, key="trainer_select")
 
-    if st.button("Next"):
-        if trainer_name:
-            st.session_state.trainer_name = trainer_name
-            st.session_state.page = "task_submission"
+    st.button("Next", on_click=go_to_task_submission)
 
 # Page: Task Submission
 elif st.session_state.page == "task_submission":
-    trainer_name = st.session_state.trainer_name
+    trainer_name = st.session_state.trainer_name or st.session_state.trainer_select
+    st.session_state.trainer_name = trainer_name  # Update in case it's the first time
     st.success(f"Welcome, {trainer_name}! Please proceed to upload your task details.")
 
-    if st.button("Back to Welcome"):
-        st.session_state.page = "welcome"
+    st.button("Back to Welcome", on_click=go_to_welcome)
 
     if st.session_state.submitted:
         # Success Page
@@ -77,9 +91,7 @@ elif st.session_state.page == "task_submission":
             f'<p style="text-align: center;"><a href="{GOOGLE_SHEETS_URL}" target="_blank">Click here to edit manually in the Google Sheet</a></p>',
             unsafe_allow_html=True,
         )
-        if st.button("Submit Another Task"):
-            st.session_state.submitted = False
-            st.session_state.page = "task_submission"
+        st.button("Submit Another Task", on_click=reset_submission)
     else:
         # Submission Form
         with st.form("sheet_update_form"):
@@ -97,17 +109,14 @@ elif st.session_state.page == "task_submission":
             if not task_link.strip():
                 st.error("Task Link is required. Please provide a valid link.")
             else:
-                try:
-                    row_data = [
-                        date.strftime("%Y-%m-%d"),
-                        batch_no or "N/A",
-                        task_id or "N/A",
-                        task_link,
-                        time_taken,
-                        total_login_hours,
-                        comments or "No comments"
-                    ]
-                    upload_to_gsheet(GOOGLE_SHEETS_URL, trainer_name, row_data)
-                    st.session_state.submitted = True
-                except Exception as e:
-                    st.error(f"Error uploading to Google Sheets: {e}")
+                # Prepare the row data
+                row_data = [
+                    date.strftime("%Y-%m-%d"),
+                    batch_no or "N/A",
+                    task_id or "N/A",
+                    task_link,
+                    time_taken,
+                    total_login_hours,
+                    comments or "No comments"
+                ]
+                submit_task(row_data, trainer_name)

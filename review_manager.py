@@ -16,16 +16,11 @@ def extract_spreadsheet_id(sheet_url):
     path_parts = parsed_url.path.split('/')
     return path_parts[3]  # The spreadsheet ID is the 4th part of the path
 
-# Authenticate with Google Sheets using Streamlit Secrets
-service_account_info = st.secrets["google_service_account"]
-creds = Credentials.from_service_account_info(
-    service_account_info,
-    scopes=['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
-)
-
-# Connect to Google Sheets
+# Authenticate with Google Sheets
 def connect_to_gsheet(sheet_url, sheet_name):
     spreadsheet_id = extract_spreadsheet_id(sheet_url)
+    scope = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
+    creds = Credentials.from_service_account_file('service_account.json', scopes=scope)
     client = gspread.authorize(creds)
     return client.open_by_key(spreadsheet_id).worksheet(sheet_name)
 
@@ -34,20 +29,16 @@ def upload_to_gsheet(sheet_url, sheet_name, data):
     worksheet = connect_to_gsheet(sheet_url, sheet_name)
     worksheet.insert_row(data, index=2)  # Insert data at the second row, below the header
 
-# Callback function for form submission
-def handle_submission():
-    st.session_state.submitted = True
+# Streamlit app
+st.title("Trainer Task Manager")
 
-# Initialize session state
+# Manage page navigation using session state
 if "page" not in st.session_state:
     st.session_state.page = "welcome"
 if "trainer_name" not in st.session_state:
     st.session_state.trainer_name = None
 if "submitted" not in st.session_state:
     st.session_state.submitted = False
-
-# Streamlit app
-st.title("Trainer Task Manager")
 
 # Page: Welcome
 if st.session_state.page == "welcome":
@@ -82,7 +73,6 @@ elif st.session_state.page == "task_submission":
         )
         if st.button("Submit Another Task"):
             st.session_state.submitted = False
-            st.session_state.page = "task_submission"
     else:
         # Submission Form
         with st.form("sheet_update_form"):
@@ -94,14 +84,11 @@ elif st.session_state.page == "task_submission":
             total_login_hours = st.text_input("TOTAL LOGIN HOURS (TILL NOW)")
             comments = st.text_area("COMMENTS (Optional)")
 
-            # Use callback for submit button
-            st.form_submit_button("Submit", on_click=handle_submission)
+            submitted = st.form_submit_button("Submit")
 
-        # Handle Form Submission
-        if st.session_state.submitted:
+        if submitted:
             if not task_link.strip():
-                st.error("Task Link is required.")
-                st.session_state.submitted = False
+                st.error("Task Link is required. Please provide a valid link.")
             else:
                 try:
                     row_data = [
@@ -114,6 +101,6 @@ elif st.session_state.page == "task_submission":
                         comments or "No comments"
                     ]
                     upload_to_gsheet(GOOGLE_SHEETS_URL, trainer_name, row_data)
-                    st.session_state.page = "submitted"
+                    st.session_state.submitted = True
                 except Exception as e:
                     st.error(f"Error uploading to Google Sheets: {e}")

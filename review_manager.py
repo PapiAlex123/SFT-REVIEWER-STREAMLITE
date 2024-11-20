@@ -18,8 +18,9 @@ def extract_spreadsheet_id(sheet_url):
     return path_parts[3]  # The spreadsheet ID is the 4th part of the path
 
 # Authenticate with Google Sheets using Streamlit Secrets
-service_account_info = json.loads(st.secrets["google_service_account"])
+service_account_info = st.secrets["google_service_account"]
 creds = Credentials.from_service_account_info(service_account_info)
+
 
 # Connect to Google Sheets
 def connect_to_gsheet(sheet_url, sheet_name):

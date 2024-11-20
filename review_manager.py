@@ -45,7 +45,7 @@ if "submitted" not in st.session_state:
 # Streamlit app
 st.title("Trainer Task Manager")
 
-# Navigation: Welcome Page
+# Page: Welcome
 if st.session_state.page == "welcome":
     st.markdown("<h2 style='text-align: center;'>Who is this?</h2>", unsafe_allow_html=True)
     st.markdown(
@@ -58,11 +58,10 @@ if st.session_state.page == "welcome":
         if trainer_name:
             st.session_state.trainer_name = trainer_name
             st.session_state.page = "task_submission"
-            st.experimental_rerun()  # Force a complete app rerun to reflect changes
         else:
             st.error("Please select a trainer before proceeding.")
 
-# Navigation: Task Submission
+# Page: Task Submission
 elif st.session_state.page == "task_submission":
     trainer_name = st.session_state.trainer_name
     st.success(f"Welcome, {trainer_name}! Please proceed to upload your task details.")
@@ -70,10 +69,9 @@ elif st.session_state.page == "task_submission":
     # Back Button
     if st.button("Back"):
         st.session_state.page = "welcome"
-        st.experimental_rerun()
 
-    # Submission Success Page
     if st.session_state.submitted:
+        # Success Page
         st.markdown("<h1 style='text-align: center; color: green;'>Well done! Your data has been updated 🎉</h1>", unsafe_allow_html=True)
         st.markdown(
             "<div style='text-align: center;'><img src='https://i.giphy.com/media/xT77XWum9yH7zNkFW0/giphy.gif' width='300'></div>",
@@ -81,10 +79,9 @@ elif st.session_state.page == "task_submission":
         )
         if st.button("Submit Another Task"):
             st.session_state.submitted = False
-            st.experimental_rerun()
-
-    # Task Submission Form
+            st.session_state.page = "task_submission"
     else:
+        # Submission Form
         with st.form("sheet_update_form"):
             date = st.date_input("Date", value=datetime.today())
             batch_no = st.text_input("Batch No (Optional)")
@@ -113,6 +110,5 @@ elif st.session_state.page == "task_submission":
                     ]
                     upload_to_gsheet(GOOGLE_SHEETS_URL, trainer_name, row_data)
                     st.session_state.submitted = True
-                    st.experimental_rerun()
                 except Exception as e:
                     st.error(f"Error uploading to Google Sheets: {e}")

@@ -16,11 +16,15 @@ def extract_spreadsheet_id(sheet_url):
     path_parts = parsed_url.path.split('/')
     return path_parts[3]  # The spreadsheet ID is the 4th part of the path
 
-# Authenticate with Google Sheets
+# Authenticate with Google Sheets using Streamlit secrets
 def connect_to_gsheet(sheet_url, sheet_name):
+    # Use Streamlit secrets for authentication
+    service_account_info = st.secrets["google_service_account"]
+    creds = Credentials.from_service_account_info(
+        service_account_info,
+        scopes=['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
+    )
     spreadsheet_id = extract_spreadsheet_id(sheet_url)
-    scope = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
-    creds = Credentials.from_service_account_file('service_account.json', scopes=scope)
     client = gspread.authorize(creds)
     return client.open_by_key(spreadsheet_id).worksheet(sheet_name)
 

@@ -3,7 +3,6 @@ import gspread
 from google.oauth2.service_account import Credentials
 from urllib.parse import urlparse
 from datetime import datetime
-import json
 
 # Google Sheets URL
 GOOGLE_SHEETS_URL = "https://docs.google.com/spreadsheets/d/10uXSI6X9ZJ9spQWadRhStUmZ-PBhQuCQOtlKc4AsjWc/edit?gid=0"
@@ -19,8 +18,10 @@ def extract_spreadsheet_id(sheet_url):
 
 # Authenticate with Google Sheets using Streamlit Secrets
 service_account_info = st.secrets["google_service_account"]
-creds = Credentials.from_service_account_info(service_account_info)
-
+creds = Credentials.from_service_account_info(
+    service_account_info,
+    scopes=['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
+)
 
 # Connect to Google Sheets
 def connect_to_gsheet(sheet_url, sheet_name):

@@ -99,7 +99,7 @@ elif st.session_state.page == "task_submission":
             if not task_link.strip():
                 st.error("Task Link is required. Please provide a valid link.")
             else:
-                st.info("Submitting your data... Please wait.")
+                st.info("Submitting task... Please click 'Submit' again to confirm.")
                 row_data = [
                     date.strftime("%Y-%m-%d"),
                     batch_no or "N/A",
@@ -110,4 +110,19 @@ elif st.session_state.page == "task_submission":
                     comments or "No comments"
                 ]
                 handle_submission(row_data, trainer_name)
-                st.stop()  # Ensures no further code executes after s
+                st.stop()  # Ensures no further code executes after submission
+
+# Page: Submission Success
+elif st.session_state.page == "submission_success":
+    st.markdown("<h1 style='text-align: center; color: green;'>Well done! Your data has been updated 🎉</h1>", unsafe_allow_html=True)
+    st.markdown(
+        "<div style='text-align: center;'><img src='https://i.giphy.com/media/xT77XWum9yH7zNkFW0/giphy.gif' width='300'></div>",
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        f'<p style="text-align: center; text-align: center; font-size: 16px;'>Your data has been successfully submitted. If you need to make changes, click below:</p>'
+        f'<p style="text-align: center;"><a href="{GOOGLE_SHEETS_URL}" target="_blank">Edit manually in Google Sheets</a></p>',
+        unsafe_allow_html=True,
+    )
+    st.button("Submit Another Task", on_click=reset_submission)
+    st.button("Back to Welcome", on_click=go_to_welcome)

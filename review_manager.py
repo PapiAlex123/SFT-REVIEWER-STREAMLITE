@@ -33,7 +33,8 @@ def upload_to_gsheet(sheet_url, sheet_name, data):
     worksheet.insert_row(data, index=2)  # Insert data at the second row, below the header
 
 # Callback functions for navigation and submission
-def go_to_task_submission():
+def go_to_task_submission(trainer_name):
+    st.session_state.trainer_name = trainer_name
     st.session_state.page = "task_submission"
 
 def go_to_welcome():
@@ -70,12 +71,11 @@ if st.session_state.page == "welcome":
     )
     trainer_name = st.selectbox("Select your name to proceed", options=SHEET_NAMES, key="trainer_select")
 
-    st.button("Next", on_click=go_to_task_submission)
+    st.button("Next", on_click=lambda: go_to_task_submission(trainer_name))
 
 # Page: Task Submission
 elif st.session_state.page == "task_submission":
-    trainer_name = st.session_state.trainer_name or st.session_state.trainer_select
-    st.session_state.trainer_name = trainer_name  # Update in case it's the first time
+    trainer_name = st.session_state.trainer_name
     st.success(f"Welcome, {trainer_name}! Please proceed to upload your task details.")
 
     st.button("Back to Welcome", on_click=go_to_welcome)
@@ -103,20 +103,19 @@ elif st.session_state.page == "task_submission":
             total_login_hours = st.text_input("TOTAL LOGIN HOURS (TILL NOW)")
             comments = st.text_area("COMMENTS (Optional)")
 
+            # Submit button with immediate handling
             submitted = st.form_submit_button("Submit")
-
-        # Process form submission
-        if submitted:
-            if not task_link.strip():
-                st.error("Task Link is required. Please provide a valid link.")
-            else:
-                row_data = [
-                    date.strftime("%Y-%m-%d"),
-                    batch_no or "N/A",
-                    task_id or "N/A",
-                    task_link,
-                    time_taken,
-                    total_login_hours,
-                    comments or "No comments"
-                ]
-                handle_submission(row_data, trainer_name)
+            if submitted:
+                if not task_link.strip():
+                    st.error("Task Link is required. Please provide a valid link.")
+                else:
+                    row_data = [
+                        date.strftime("%Y-%m-%d"),
+                        batch_no or "N/A",
+                        task_id or "N/A",
+                        task_link,
+                        time_taken,
+                        total_login_hours,
+                        comments or "No comments"
+                    ]
+                    handle_submission(row_data, trainer_name)

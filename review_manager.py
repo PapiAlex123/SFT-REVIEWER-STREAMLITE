@@ -43,7 +43,7 @@ def reset_submission():
     st.session_state.submitted = False
     st.session_state.page = "task_submission"
 
-def submit_task(data, trainer_name):
+def handle_submission(data, trainer_name):
     try:
         upload_to_gsheet(GOOGLE_SHEETS_URL, trainer_name, data)
         st.session_state.submitted = True
@@ -105,11 +105,11 @@ elif st.session_state.page == "task_submission":
 
             submitted = st.form_submit_button("Submit")
 
+        # Process form submission
         if submitted:
             if not task_link.strip():
                 st.error("Task Link is required. Please provide a valid link.")
             else:
-                # Prepare the row data
                 row_data = [
                     date.strftime("%Y-%m-%d"),
                     batch_no or "N/A",
@@ -119,4 +119,4 @@ elif st.session_state.page == "task_submission":
                     total_login_hours,
                     comments or "No comments"
                 ]
-                submit_task(row_data, trainer_name)
+                handle_submission(row_data, trainer_name)

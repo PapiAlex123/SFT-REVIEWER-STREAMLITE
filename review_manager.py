@@ -3,6 +3,7 @@ import gspread
 from google.oauth2.service_account import Credentials
 from urllib.parse import urlparse
 from datetime import datetime
+import json
 
 # Google Sheets URL
 GOOGLE_SHEETS_URL = "https://docs.google.com/spreadsheets/d/10uXSI6X9ZJ9spQWadRhStUmZ-PBhQuCQOtlKc4AsjWc/edit?gid=0"
@@ -16,11 +17,13 @@ def extract_spreadsheet_id(sheet_url):
     path_parts = parsed_url.path.split('/')
     return path_parts[3]  # The spreadsheet ID is the 4th part of the path
 
-# Authenticate with Google Sheets
+# Authenticate with Google Sheets using Streamlit Secrets
+service_account_info = json.loads(st.secrets["google_service_account"])
+creds = Credentials.from_service_account_info(service_account_info)
+
+# Connect to Google Sheets
 def connect_to_gsheet(sheet_url, sheet_name):
     spreadsheet_id = extract_spreadsheet_id(sheet_url)
-    scope = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
-    creds = Credentials.from_service_account_file('service_account.json', scopes=scope)
     client = gspread.authorize(creds)
     return client.open_by_key(spreadsheet_id).worksheet(sheet_name)
 
@@ -48,6 +51,10 @@ st.title("Trainer Task Manager")
 # Page: Welcome
 if st.session_state.page == "welcome":
     st.markdown("<h2 style='text-align: center;'>Who is this?</h2>", unsafe_allow_html=True)
+    st.markdown(
+        "<div style='text-align: center;'><img src='https://i.giphy.com/media/fnuSiwXMTV3zmYDf6k/giphy.gif' width='300'></div>",
+        unsafe_allow_html=True,
+    )
     trainer_name = st.selectbox("Select your name to proceed", options=SHEET_NAMES)
 
     if st.button("Next"):
@@ -69,6 +76,10 @@ elif st.session_state.page == "task_submission":
 
     if st.session_state.submitted:
         st.markdown("<h1 style='text-align: center; color: green;'>Well done! Your data has been updated 🎉</h1>", unsafe_allow_html=True)
+        st.markdown(
+            "<div style='text-align: center;'><img src='https://i.giphy.com/media/xT77XWum9yH7zNkFW0/giphy.gif' width='300'></div>",
+            unsafe_allow_html=True,
+        )
         if st.button("Submit Another Task"):
             st.session_state.submitted = False
             st.experimental_set_query_params(page="task_submission")

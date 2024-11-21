@@ -8,7 +8,7 @@ from datetime import datetime
 GOOGLE_SHEETS_URL = "https://docs.google.com/spreadsheets/d/10uXSI6X9ZJ9spQWadRhStUmZ-PBhQuCQOtlKc4AsjWc/edit?gid=0"
 
 # Define the sheet names (trainers)
-SHEET_NAMES = ["Deepak Dewan", "Chukka Hemalatha", "Badar Unnisa", "Rushikesh Vishwasrao", "Aiyasha Parveen Hilali"]
+SHEET_NAMES = ["Deepak Dewan", "Chukka Hemalatha", "Badar Unnisa", "Rushikesh Vishwasrao", "MD SHARIA"]
 
 # Extract Spreadsheet ID from the URL
 def extract_spreadsheet_id(sheet_url):

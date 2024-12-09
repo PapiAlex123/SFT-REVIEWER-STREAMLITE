@@ -8,7 +8,7 @@ from datetime import datetime
 GOOGLE_SHEETS_URL = "https://docs.google.com/spreadsheets/d/10uXSI6X9ZJ9spQWadRhStUmZ-PBhQuCQOtlKc4AsjWc/edit?gid=0"
 
 # Define the sheet names (trainers)
-SHEET_NAMES = ["Deepak Dewan", "Chukka Hemalatha", "Badar Unnisa", "Rushikesh Vishwasrao", "MD SHARIA","Raushan Raj"]
+SHEET_NAMES = ["Deepak Dewan", "Chukka Hemalatha", "Badar Unnisa", "Rushikesh Vishwasrao", "MD SHARIA", "Raushan Raj"]
 
 # Extract Spreadsheet ID from the URL
 def extract_spreadsheet_id(sheet_url):
@@ -87,12 +87,8 @@ elif st.session_state.page == "task_submission":
     # Submission Form
     with st.form("sheet_update_form"):
         date = st.date_input("Date", value=datetime.today())
-        batch_no = st.text_input("Batch No (Optional)")
-        task_id = st.text_input("TASK ID (Optional)")
-        task_link = st.text_input("TASK LINK (Required)")
-        time_taken = st.text_input("TIME TAKEN")
-        total_login_hours = st.text_input("TOTAL LOGIN HOURS (TILL NOW)")
-        comments = st.text_area("COMMENTS (Optional)")
+        task_link = st.text_input("Task Link (Required)")
+        is_rework = st.radio("Is this task a rework?", options=["No", "Yes"], index=0)
 
         submitted = st.form_submit_button("Submit")
         if submitted:
@@ -101,13 +97,9 @@ elif st.session_state.page == "task_submission":
             else:
                 st.info("Submitting task... Please click 'Submit' again to confirm.")
                 row_data = [
-                    date.strftime("%Y-%m-%d"),
-                    batch_no or "N/A",
-                    task_id or "N/A",
+                    date.strftime("%Y-%m-%d"),  # Format the date
                     task_link,
-                    time_taken,
-                    total_login_hours,
-                    comments or "No comments"
+                    is_rework  # Yes or No for Rework
                 ]
                 handle_submission(row_data, trainer_name)
                 st.stop()  # Ensures no further code executes after submission

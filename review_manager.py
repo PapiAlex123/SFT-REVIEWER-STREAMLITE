@@ -27,10 +27,25 @@ def connect_to_gsheet(sheet_url, sheet_name):
     client = gspread.authorize(creds)
     return client.open_by_key(spreadsheet_id).worksheet(sheet_name)
 
+# Check if a task is duplicate
+def is_duplicate(worksheet, date, task_link):
+    # Fetch all records
+    records = worksheet.get_all_records()
+    for record in records:
+        if record.get("Date") == date and record.get("Task Link") == task_link:
+            return True
+    return False
+
 # Upload data to Google Sheets
 def upload_to_gsheet(sheet_url, sheet_name, data):
     worksheet = connect_to_gsheet(sheet_url, sheet_name)
-    worksheet.insert_row(data, index=2)  # Insert data at the second row, below the header
+
+    # Check for duplicates
+    if is_duplicate(worksheet, data[0], data[1]):  # Date and Task Link
+        st.warning("This task has already been uploaded. Duplicate entries are not allowed.")
+    else:
+        worksheet.insert_row(data, index=2)  # Insert data if not duplicate
+        st.success("Task successfully uploaded!")
 
 # Navigation helpers
 def go_to_task_submission():
@@ -95,7 +110,6 @@ elif st.session_state.page == "task_submission":
             if not task_link.strip():
                 st.error("Task Link is required. Please provide a valid link.")
             else:
-                st.info("Submitting task... Please click 'Submit' again to confirm.")
                 row_data = [
                     date.strftime("%Y-%m-%d"),  # Format the date
                     task_link,

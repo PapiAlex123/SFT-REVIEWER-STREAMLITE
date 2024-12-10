@@ -33,7 +33,7 @@ def upload_to_gsheet(sheet_url, sheet_name, data):
     worksheet.insert_row(data, index=2)  # Insert data at the second row, below the header
 
 # Navigation helpers
-def set_page(page_name):
+def navigate_to(page_name):
     """Set the current page."""
     st.session_state["page"] = page_name
 
@@ -62,16 +62,14 @@ if st.session_state["page"] == "welcome":
     trainer_name = st.selectbox("Select your name to proceed", options=SHEET_NAMES, key="trainer_select")
     if st.button("Next"):
         st.session_state["trainer_name"] = trainer_name
-        set_page("task_submission")
-        st.experimental_rerun()  # Force page transition
+        navigate_to("task_submission")
 
 # Page: Task Submission
 elif st.session_state["page"] == "task_submission":
     trainer_name = st.session_state["trainer_name"]
     st.success(f"Welcome, {trainer_name}! Please proceed to upload your task details.")
     if st.button("Back to Welcome"):
-        set_page("welcome")
-        st.experimental_rerun()  # Force page transition
+        navigate_to("welcome")
 
     # Submission Form
     with st.form("sheet_update_form"):
@@ -93,8 +91,7 @@ elif st.session_state["page"] == "task_submission":
             try:
                 upload_to_gsheet(GOOGLE_SHEETS_URL, trainer_name, row_data)
                 st.session_state["submitted"] = True
-                set_page("submission_success")
-                st.experimental_rerun()  # Force page transition
+                navigate_to("submission_success")
             except Exception as e:
                 st.error(f"Error uploading to Google Sheets: {e}")
 
@@ -113,10 +110,8 @@ elif st.session_state["page"] == "submission_success":
 
     if st.button("Submit Another Task"):
         reset_submission()
-        set_page("task_submission")
-        st.experimental_rerun()  # Force page transition
+        navigate_to("task_submission")
 
     if st.button("Back to Welcome"):
         reset_submission()
-        set_page("welcome")
-        st.experimental_rerun()  # Force page transition
+        navigate_to("welcome")

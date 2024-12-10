@@ -56,19 +56,6 @@ def handle_submission(data, trainer_name):
     except Exception as e:
         st.error(f"Error uploading to Google Sheets: {e}")
 
-# Callback function for form submission
-def submit_task_form(date, task_link, is_rework, trainer_name):
-    """Handle form submission."""
-    if not task_link.strip():
-        st.error("Task Link is required. Please provide a valid link.")
-    else:
-        row_data = [
-            date.strftime("%Y-%m-%d"),  # Format the date
-            task_link,
-            is_rework  # Yes or No for Rework
-        ]
-        handle_submission(row_data, trainer_name)
-
 # Initialize session state
 if "page" not in st.session_state:
     st.session_state.page = "welcome"
@@ -99,16 +86,23 @@ elif st.session_state.page == "task_submission":
 
     # Submission Form
     with st.form("sheet_update_form"):
-        date = st.date_input("Date", value=datetime.today(), key="form_date")
-        task_link = st.text_input("Task Link (Required)", key="form_task_link")
-        is_rework = st.radio("Is this task a rework?", options=["No", "Yes"], index=0, key="form_is_rework")
+        date = st.date_input("Date", value=datetime.today())
+        task_link = st.text_input("Task Link (Required)")
+        is_rework = st.radio("Is this task a rework?", options=["No", "Yes"], index=0)
 
-        # Form submit button with a callback
-        st.form_submit_button(
-            "Submit",
-            on_click=submit_task_form,
-            args=(date, task_link, is_rework, trainer_name)
-        )
+        submitted = st.form_submit_button("Submit")
+        if submitted:
+            if not task_link.strip():
+                st.error("Task Link is required. Please provide a valid link.")
+            else:
+                st.info("Submitting task... Please click 'Submit' again to confirm.")
+                row_data = [
+                    date.strftime("%Y-%m-%d"),  # Format the date
+                    task_link,
+                    is_rework  # Yes or No for Rework
+                ]
+                handle_submission(row_data, trainer_name)
+                st.stop()  # Ensures no further code executes after submission
 
 # Page: Submission Success
 elif st.session_state.page == "submission_success":

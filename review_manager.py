@@ -47,23 +47,27 @@ def reset_submission():
     st.session_state.submitted = False
     st.session_state.page = "task_submission"
 
-def handle_submission(date, task_link, is_rework, trainer_name):
+def handle_submission(data, trainer_name):
+    """Upload data and navigate to the success page."""
+    try:
+        upload_to_gsheet(GOOGLE_SHEETS_URL, trainer_name, data)
+        st.session_state.submitted = True
+        st.session_state.page = "submission_success"
+    except Exception as e:
+        st.error(f"Error uploading to Google Sheets: {e}")
+
+# Callback function for form submission
+def submit_task_form(date, task_link, is_rework, trainer_name):
     """Handle form submission."""
     if not task_link.strip():
-        st.session_state.error_message = "Task Link is required. Please provide a valid link."
+        st.error("Task Link is required. Please provide a valid link.")
     else:
-        # Prepare the row data
         row_data = [
             date.strftime("%Y-%m-%d"),  # Format the date
             task_link,
             is_rework  # Yes or No for Rework
         ]
-        try:
-            upload_to_gsheet(GOOGLE_SHEETS_URL, trainer_name, row_data)
-            st.session_state.submitted = True
-            st.session_state.page = "submission_success"
-        except Exception as e:
-            st.error(f"Error uploading to Google Sheets: {e}")
+        handle_submission(row_data, trainer_name)
 
 # Initialize session state
 if "page" not in st.session_state:
@@ -72,8 +76,6 @@ if "trainer_name" not in st.session_state:
     st.session_state.trainer_name = None
 if "submitted" not in st.session_state:
     st.session_state.submitted = False
-if "error_message" not in st.session_state:
-    st.session_state.error_message = None
 
 # Streamlit app
 st.title("Trainer Task Manager")
@@ -97,30 +99,16 @@ elif st.session_state.page == "task_submission":
 
     # Submission Form
     with st.form("sheet_update_form"):
-        date = st.date_input("Date", value=datetime.today())
-        task_link = st.text_input("Task Link (Required)")
-        is_rework = st.radio("Is this task a rework?", options=["No", "Yes"], index=0)
-
-        # Submit button callback
-        def submit_task():
-            if not task_link.strip():
-                st.error("Task Link is required. Please provide a valid link.")
-            else:
-                # Simulate double submit by processing the task once
-                st.session_state.error_message = None
-                row_data = [
-                    date.strftime("%Y-%m-%d"),  # Format the date
-                    task_link,
-                    is_rework  # Yes or No for Rework
-                ]
-                handle_submission(date, task_link, is_rework, trainer_name)
+        date = st.date_input("Date", value=datetime.today(), key="form_date")
+        task_link = st.text_input("Task Link (Required)", key="form_task_link")
+        is_rework = st.radio("Is this task a rework?", options=["No", "Yes"], index=0, key="form_is_rework")
 
         # Form submit button with a callback
-        st.form_submit_button("Submit", on_click=submit_task)
-
-    # Display any error messages
-    if st.session_state.error_message:
-        st.error(st.session_state.error_message)
+        st.form_submit_button(
+            "Submit",
+            on_click=submit_task_form,
+            args=(date, task_link, is_rework, trainer_name)
+        )
 
 # Page: Submission Success
 elif st.session_state.page == "submission_success":

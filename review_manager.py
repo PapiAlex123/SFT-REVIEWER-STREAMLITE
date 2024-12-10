@@ -51,8 +51,8 @@ def handle_submission(data, trainer_name):
     """Upload data and navigate to the success page."""
     try:
         upload_to_gsheet(GOOGLE_SHEETS_URL, trainer_name, data)
-        st.session_state.submitted = True
-        st.session_state.page = "submission_success"
+        st.session_state.page = "submission_success"  # Update to success page
+        st.experimental_rerun()  # Force immediate rerun to show the success page
     except Exception as e:
         st.error(f"Error uploading to Google Sheets: {e}")
 
@@ -93,7 +93,7 @@ elif st.session_state.page == "task_submission":
         # Form submit button
         submitted = st.form_submit_button("Submit")
 
-    # Handle form submission outside the callback
+    # Handle form submission
     if submitted:
         if not task_link.strip():
             st.error("Task Link is required. Please provide a valid link.")

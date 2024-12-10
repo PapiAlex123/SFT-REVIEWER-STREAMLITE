@@ -47,24 +47,6 @@ def reset_submission():
     st.session_state.submitted = False
     st.session_state.page = "task_submission"
 
-def handle_submission(date, task_link, is_rework, trainer_name):
-    """Handle form submission."""
-    if not task_link.strip():
-        st.error("Task Link is required. Please provide a valid link.")
-    else:
-        # Prepare the row data
-        row_data = [
-            date.strftime("%Y-%m-%d"),  # Format the date
-            task_link,
-            is_rework  # Yes or No for Rework
-        ]
-        try:
-            upload_to_gsheet(GOOGLE_SHEETS_URL, trainer_name, row_data)
-            st.session_state.submitted = True
-            st.session_state.page = "submission_success"
-        except Exception as e:
-            st.error(f"Error uploading to Google Sheets: {e}")
-
 # Initialize session state
 if "page" not in st.session_state:
     st.session_state.page = "welcome"
@@ -95,16 +77,33 @@ elif st.session_state.page == "task_submission":
 
     # Submission Form
     with st.form("sheet_update_form"):
-        date = st.date_input("Date", value=datetime.today(), key="form_date")
-        task_link = st.text_input("Task Link (Required)", key="form_task_link")
-        is_rework = st.radio("Is this task a rework?", options=["No", "Yes"], index=0, key="form_is_rework")
+        date = st.date_input("Date", value=datetime.today())
+        task_link = st.text_input("Task Link (Required)")
+        is_rework = st.radio("Is this task a rework?", options=["No", "Yes"], index=0)
 
-        # Form submit button with a callback
-        st.form_submit_button(
-            "Submit",
-            on_click=handle_submission,
-            args=(date, task_link, is_rework, trainer_name)
-        )
+        # Submit button callback
+        def submit_task():
+            if not task_link.strip():
+                st.session_state.error_message = "Task Link is required. Please provide a valid link."
+            else:
+                st.session_state.error_message = None
+                row_data = [
+                    date.strftime("%Y-%m-%d"),  # Format the date
+                    task_link,
+                    is_rework  # Yes or No for Rework
+                ]
+                try:
+                    upload_to_gsheet(GOOGLE_SHEETS_URL, trainer_name, row_data)
+                    st.session_state.submitted = True
+                    st.session_state.page = "submission_success"
+                except Exception as e:
+                    st.error(f"Error uploading to Google Sheets: {e}")
+
+        st.form_submit_button("Submit", on_click=submit_task)
+
+    # Display any error messages
+    if "error_message" in st.session_state and st.session_state.error_message:
+        st.error(st.session_state.error_message)
 
 # Page: Submission Success
 elif st.session_state.page == "submission_success":

@@ -36,7 +36,6 @@ def upload_to_gsheet(sheet_url, sheet_name, data):
 def go_to_task_submission():
     """Navigate to the task submission page."""
     st.session_state.page = "task_submission"
-    st.session_state.error_message = None
     st.session_state.submitted = False
 
 def go_to_welcome():
@@ -98,14 +97,26 @@ elif st.session_state.page == "task_submission":
 
     # Submission Form
     with st.form("sheet_update_form"):
-        date = st.date_input("Date", value=datetime.today(), key="form_date")
-        task_link = st.text_input("Task Link (Required)", key="form_task_link")
-        is_rework = st.radio("Is this task a rework?", options=["No", "Yes"], index=0, key="form_is_rework")
+        date = st.date_input("Date", value=datetime.today())
+        task_link = st.text_input("Task Link (Required)")
+        is_rework = st.radio("Is this task a rework?", options=["No", "Yes"], index=0)
+
+        # Submit button callback
+        def submit_task():
+            if not task_link.strip():
+                st.error("Task Link is required. Please provide a valid link.")
+            else:
+                # Simulate double submit by processing the task once
+                st.session_state.error_message = None
+                row_data = [
+                    date.strftime("%Y-%m-%d"),  # Format the date
+                    task_link,
+                    is_rework  # Yes or No for Rework
+                ]
+                handle_submission(date, task_link, is_rework, trainer_name)
 
         # Form submit button with a callback
-        submitted = st.form_submit_button("Submit")
-        if submitted:
-            handle_submission(date, task_link, is_rework, trainer_name)
+        st.form_submit_button("Submit", on_click=submit_task)
 
     # Display any error messages
     if st.session_state.error_message:

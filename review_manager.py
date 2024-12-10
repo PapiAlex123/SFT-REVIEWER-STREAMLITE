@@ -33,85 +33,89 @@ def upload_to_gsheet(sheet_url, sheet_name, data):
     worksheet.insert_row(data, index=2)  # Insert data at the second row, below the header
 
 # Navigation helpers
-def navigate_to(page_name):
-    """Set the current page."""
-    st.session_state["page"] = page_name
+def go_to_task_submission():
+    """Navigate to the task submission page."""
+    st.session_state.page = "task_submission"
+    st.session_state.submitted = False
+
+def go_to_welcome():
+    """Navigate back to the welcome page."""
+    st.session_state.page = "welcome"
 
 def reset_submission():
-    """Reset the submission state."""
-    st.session_state["submitted"] = False
+    """Reset the submission state and navigate to the task submission page."""
+    st.session_state.submitted = False
+    st.session_state.page = "task_submission"
 
-# Ensure session state variables are initialized
+def handle_submission(data, trainer_name):
+    """Upload data and navigate to the success page."""
+    try:
+        upload_to_gsheet(GOOGLE_SHEETS_URL, trainer_name, data)
+        st.session_state.submitted = True
+        st.session_state.page = "submission_success"
+    except Exception as e:
+        st.error(f"Error uploading to Google Sheets: {e}")
+
+# Initialize session state
 if "page" not in st.session_state:
-    st.session_state["page"] = "welcome"
+    st.session_state.page = "welcome"
 if "trainer_name" not in st.session_state:
-    st.session_state["trainer_name"] = None
+    st.session_state.trainer_name = None
 if "submitted" not in st.session_state:
-    st.session_state["submitted"] = False
+    st.session_state.submitted = False
 
 # Streamlit app
 st.title("Trainer Task Manager")
 
 # Page: Welcome
-if st.session_state["page"] == "welcome":
+if st.session_state.page == "welcome":
     st.markdown("<h2 style='text-align: center;'>Who is this?</h2>", unsafe_allow_html=True)
     st.markdown(
         "<div style='text-align: center;'><img src='https://i.giphy.com/media/fnuSiwXMTV3zmYDf6k/giphy.gif' width='300'></div>",
         unsafe_allow_html=True,
     )
     trainer_name = st.selectbox("Select your name to proceed", options=SHEET_NAMES, key="trainer_select")
-    if st.button("Next"):
-        st.session_state["trainer_name"] = trainer_name
-        navigate_to("task_submission")
+    st.button("Next", on_click=lambda: (st.session_state.update({"trainer_name": trainer_name}), go_to_task_submission()))
 
 # Page: Task Submission
-elif st.session_state["page"] == "task_submission":
-    trainer_name = st.session_state["trainer_name"]
+elif st.session_state.page == "task_submission":
+    trainer_name = st.session_state.trainer_name
     st.success(f"Welcome, {trainer_name}! Please proceed to upload your task details.")
-    if st.button("Back to Welcome"):
-        navigate_to("welcome")
+
+    st.button("Back to Welcome", on_click=go_to_welcome)
 
     # Submission Form
     with st.form("sheet_update_form"):
         date = st.date_input("Date", value=datetime.today())
         task_link = st.text_input("Task Link (Required)")
         is_rework = st.radio("Is this task a rework?", options=["No", "Yes"], index=0)
-        submitted = st.form_submit_button("Submit")
 
-    # Handle form submission
-    if submitted:
-        if not task_link.strip():
-            st.error("Task Link is required. Please provide a valid link.")
-        else:
-            row_data = [
-                date.strftime("%Y-%m-%d"),  # Format the date
-                task_link,
-                is_rework  # Yes or No for Rework
-            ]
-            try:
-                upload_to_gsheet(GOOGLE_SHEETS_URL, trainer_name, row_data)
-                st.session_state["submitted"] = True
-                navigate_to("submission_success")
-            except Exception as e:
-                st.error(f"Error uploading to Google Sheets: {e}")
+        submitted = st.form_submit_button("Submit")
+        if submitted:
+            if not task_link.strip():
+                st.error("Task Link is required. Please provide a valid link.")
+            else:
+                st.info("Submitting task... Please click 'Submit' again to confirm.")
+                row_data = [
+                    date.strftime("%Y-%m-%d"),  # Format the date
+                    task_link,
+                    is_rework  # Yes or No for Rework
+                ]
+                handle_submission(row_data, trainer_name)
+                st.stop()  # Ensures no further code executes after submission
 
 # Page: Submission Success
-elif st.session_state["page"] == "submission_success":
+elif st.session_state.page == "submission_success":
     st.markdown("<h1 style='text-align: center; color: green;'>Well done! Your data has been updated 🎉</h1>", unsafe_allow_html=True)
     st.markdown(
         "<div style='text-align: center;'><img src='https://i.giphy.com/media/xT77XWum9yH7zNkFW0/giphy.gif' width='300'></div>",
         unsafe_allow_html=True,
     )
     st.markdown(
-        f'<p style="text-align: center; font-size: 16px;">Your data has been successfully submitted. If you need to make changes, click below:</p>'
-        f'<p style="text-align: center;"><a href="{GOOGLE_SHEETS_URL}" target="_blank">Edit manually in Google Sheets</a></p>',
-        unsafe_allow_html=True,
-    )
+    f'<p style="text-align: center; font-size: 16px;">Your data has been successfully submitted. If you need to make changes, click below:</p>'
+    f'<p style="text-align: center;"><a href="{GOOGLE_SHEETS_URL}" target="_blank">Edit manually in Google Sheets</a></p>',
+    unsafe_allow_html=True,
+)
 
-    if st.button("Submit Another Task"):
-        reset_submission()
-        navigate_to("task_submission")
-
-    if st.button("Back to Welcome"):
-        reset_submission()
-        navigate_to("welcome")
+    st.button("Submit Another Task", on_click=reset_submission)
+    st.button("Back to Welcome", on_click=go_to_welcome)

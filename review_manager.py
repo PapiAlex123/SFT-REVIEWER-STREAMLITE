@@ -33,26 +33,21 @@ def upload_to_gsheet(sheet_url, sheet_name, data):
     worksheet.insert_row(data, index=2)  # Insert data at the second row, below the header
 
 # Navigation helpers
-def go_to_task_submission():
-    """Navigate to the task submission page."""
-    st.session_state.page = "task_submission"
-    st.session_state.submitted = False
-
-def go_to_welcome():
-    """Navigate back to the welcome page."""
-    st.session_state.page = "welcome"
+def navigate_to(page_name):
+    """Navigate to the specified page."""
+    st.session_state.page = page_name
 
 def reset_submission():
-    """Reset the submission state and navigate to the task submission page."""
+    """Reset the submission state."""
     st.session_state.submitted = False
-    st.session_state.page = "task_submission"
+    navigate_to("task_submission")
 
 def handle_submission(data, trainer_name):
     """Upload data and navigate to the success page."""
     try:
         upload_to_gsheet(GOOGLE_SHEETS_URL, trainer_name, data)
-        st.session_state.page = "submission_success"  # Update to success page
-        st.experimental_rerun()  # Force immediate rerun to show the success page
+        st.session_state.submitted = True
+        navigate_to("submission_success")
     except Exception as e:
         st.error(f"Error uploading to Google Sheets: {e}")
 
@@ -75,14 +70,14 @@ if st.session_state.page == "welcome":
         unsafe_allow_html=True,
     )
     trainer_name = st.selectbox("Select your name to proceed", options=SHEET_NAMES, key="trainer_select")
-    st.button("Next", on_click=lambda: (st.session_state.update({"trainer_name": trainer_name}), go_to_task_submission()))
+    st.button("Next", on_click=lambda: (st.session_state.update({"trainer_name": trainer_name}), navigate_to("task_submission")))
 
 # Page: Task Submission
 elif st.session_state.page == "task_submission":
     trainer_name = st.session_state.trainer_name
     st.success(f"Welcome, {trainer_name}! Please proceed to upload your task details.")
 
-    st.button("Back to Welcome", on_click=go_to_welcome)
+    st.button("Back to Welcome", on_click=lambda: navigate_to("welcome"))
 
     # Submission Form
     with st.form("sheet_update_form"):
@@ -119,4 +114,4 @@ elif st.session_state.page == "submission_success":
 )
 
     st.button("Submit Another Task", on_click=reset_submission)
-    st.button("Back to Welcome", on_click=go_to_welcome)
+    st.button("Back to Welcome", on_click=lambda: navigate_to("welcome"))

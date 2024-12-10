@@ -33,25 +33,15 @@ def upload_to_gsheet(sheet_url, sheet_name, data):
     worksheet.insert_row(data, index=2)  # Insert data at the second row, below the header
 
 # Navigation helpers
-def navigate_to(page_name):
-    """Navigate to the specified page."""
+def set_page(page_name):
+    """Set the current page."""
     st.session_state.page = page_name
 
 def reset_submission():
     """Reset the submission state."""
     st.session_state.submitted = False
-    navigate_to("task_submission")
 
-def handle_submission(data, trainer_name):
-    """Upload data and navigate to the success page."""
-    try:
-        upload_to_gsheet(GOOGLE_SHEETS_URL, trainer_name, data)
-        st.session_state.submitted = True
-        navigate_to("submission_success")
-    except Exception as e:
-        st.error(f"Error uploading to Google Sheets: {e}")
-
-# Initialize session state
+# Ensure session state variables are initialized
 if "page" not in st.session_state:
     st.session_state.page = "welcome"
 if "trainer_name" not in st.session_state:
@@ -70,22 +60,22 @@ if st.session_state.page == "welcome":
         unsafe_allow_html=True,
     )
     trainer_name = st.selectbox("Select your name to proceed", options=SHEET_NAMES, key="trainer_select")
-    st.button("Next", on_click=lambda: (st.session_state.update({"trainer_name": trainer_name}), navigate_to("task_submission")))
+    if st.button("Next"):
+        st.session_state.trainer_name = trainer_name
+        set_page("task_submission")
 
 # Page: Task Submission
 elif st.session_state.page == "task_submission":
     trainer_name = st.session_state.trainer_name
     st.success(f"Welcome, {trainer_name}! Please proceed to upload your task details.")
-
-    st.button("Back to Welcome", on_click=lambda: navigate_to("welcome"))
+    if st.button("Back to Welcome"):
+        set_page("welcome")
 
     # Submission Form
     with st.form("sheet_update_form"):
         date = st.date_input("Date", value=datetime.today())
         task_link = st.text_input("Task Link (Required)")
         is_rework = st.radio("Is this task a rework?", options=["No", "Yes"], index=0)
-
-        # Form submit button
         submitted = st.form_submit_button("Submit")
 
     # Handle form submission
@@ -98,7 +88,12 @@ elif st.session_state.page == "task_submission":
                 task_link,
                 is_rework  # Yes or No for Rework
             ]
-            handle_submission(row_data, trainer_name)
+            try:
+                upload_to_gsheet(GOOGLE_SHEETS_URL, trainer_name, row_data)
+                st.session_state.submitted = True
+                set_page("submission_success")
+            except Exception as e:
+                st.error(f"Error uploading to Google Sheets: {e}")
 
 # Page: Submission Success
 elif st.session_state.page == "submission_success":
@@ -108,10 +103,15 @@ elif st.session_state.page == "submission_success":
         unsafe_allow_html=True,
     )
     st.markdown(
-    f'<p style="text-align: center; font-size: 16px;">Your data has been successfully submitted. If you need to make changes, click below:</p>'
-    f'<p style="text-align: center;"><a href="{GOOGLE_SHEETS_URL}" target="_blank">Edit manually in Google Sheets</a></p>',
-    unsafe_allow_html=True,
-)
+        f'<p style="text-align: center; font-size: 16px;">Your data has been successfully submitted. If you need to make changes, click below:</p>'
+        f'<p style="text-align: center;"><a href="{GOOGLE_SHEETS_URL}" target="_blank">Edit manually in Google Sheets</a></p>',
+        unsafe_allow_html=True,
+    )
 
-    st.button("Submit Another Task", on_click=reset_submission)
-    st.button("Back to Welcome", on_click=lambda: navigate_to("welcome"))
+    if st.button("Submit Another Task"):
+        reset_submission()
+        set_page("task_submission")
+
+    if st.button("Back to Welcome"):
+        reset_submission()
+        set_page("welcome")

@@ -54,10 +54,11 @@ def reset_submission():
     st.session_state.page = "task_submission"
 
 def handle_submission(ist_date, pst_date, task_link, is_rework, trainer_name):
-    if not task_link.strip():
-        st.session_state.error_message = "Task Link is required. Please provide a valid link."
+    # Simulate the second click behavior
+    if "submit_clicked" not in st.session_state or not st.session_state.submit_clicked:
+        st.session_state.submit_clicked = True
+        st.info("Submitting task... Please click Submit again to confirm.")
     else:
-        # Prepare the row data
         row_data = [
             ist_date.strftime("%Y-%m-%d"),  # Date in IST
             task_link,
@@ -67,6 +68,7 @@ def handle_submission(ist_date, pst_date, task_link, is_rework, trainer_name):
         try:
             upload_to_gsheet(GOOGLE_SHEETS_URL, trainer_name, row_data)
             st.session_state.submitted = True
+            st.session_state.submit_clicked = False  # Reset the submit state
             st.session_state.page = "submission_success"
         except Exception as e:
             st.error(f"Error uploading to Google Sheets: {e}")
@@ -80,6 +82,8 @@ if "submitted" not in st.session_state:
     st.session_state.submitted = False
 if "error_message" not in st.session_state:
     st.session_state.error_message = None
+if "submit_clicked" not in st.session_state:
+    st.session_state.submit_clicked = False
 
 # Streamlit app
 st.title("Trainer Task Manager")
@@ -107,10 +111,8 @@ elif st.session_state.page == "task_submission":
         task_link = st.text_input("Task Link (Required)")
         is_rework = st.radio("Is this task a rework?", options=["No", "Yes"], index=0)
 
-        # Submit button callback
         submitted = st.form_submit_button("Submit")
         if submitted:
-            # Convert IST to PST
             pst_date = convert_ist_to_pst(datetime.combine(date, datetime.min.time()))
             handle_submission(date, pst_date, task_link, is_rework, trainer_name)
 

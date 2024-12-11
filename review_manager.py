@@ -2,8 +2,8 @@ import streamlit as st
 import gspread
 from google.oauth2.service_account import Credentials
 from urllib.parse import urlparse
-from datetime import datetime, timedelta
-import pytz  # For timezone conversion
+from datetime import datetime
+import pytz
 
 # Google Sheets URL
 GOOGLE_SHEETS_URL = "https://docs.google.com/spreadsheets/d/10uXSI6X9ZJ9spQWadRhStUmZ-PBhQuCQOtlKc4AsjWc/edit?gid=0"
@@ -60,9 +60,9 @@ def handle_submission(ist_date, pst_date, task_link, is_rework, trainer_name):
         # Prepare the row data
         row_data = [
             ist_date.strftime("%Y-%m-%d"),  # Date in IST
-            pst_date.strftime("%Y-%m-%d"),  # Date in PST
             task_link,
-            is_rework  # Yes or No for Rework
+            is_rework,  # Yes or No for Rework
+            pst_date.strftime("%Y-%m-%d")  # Date in PST
         ]
         try:
             upload_to_gsheet(GOOGLE_SHEETS_URL, trainer_name, row_data)
@@ -111,7 +111,7 @@ elif st.session_state.page == "task_submission":
         submitted = st.form_submit_button("Submit")
         if submitted:
             # Convert IST to PST
-            pst_date = convert_ist_to_pst(date)
+            pst_date = convert_ist_to_pst(datetime.combine(date, datetime.min.time()))
             handle_submission(date, pst_date, task_link, is_rework, trainer_name)
 
     if st.session_state.error_message:

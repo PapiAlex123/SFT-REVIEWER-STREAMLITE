@@ -2,7 +2,8 @@ import streamlit as st
 import gspread
 from google.oauth2.service_account import Credentials
 from urllib.parse import urlparse
-from datetime import datetime
+from datetime import datetime, timedelta
+import pytz  # For timezone conversion
 
 # Google Sheets URL
 GOOGLE_SHEETS_URL = "https://docs.google.com/spreadsheets/d/10uXSI6X9ZJ9spQWadRhStUmZ-PBhQuCQOtlKc4AsjWc/edit?gid=0"
@@ -32,29 +33,43 @@ def upload_to_gsheet(sheet_url, sheet_name, data):
     worksheet = connect_to_gsheet(sheet_url, sheet_name)
     worksheet.insert_row(data, index=2)  # Insert data at the second row, below the header
 
+# Convert IST to PST
+def convert_ist_to_pst(ist_date):
+    ist_timezone = pytz.timezone("Asia/Kolkata")
+    pst_timezone = pytz.timezone("America/Los_Angeles")
+    ist_datetime = ist_timezone.localize(datetime.combine(ist_date, datetime.min.time()))
+    pst_datetime = ist_datetime.astimezone(pst_timezone)
+    return pst_datetime.date()
+
 # Navigation helpers
 def go_to_task_submission():
-    """Navigate to the task submission page."""
     st.session_state.page = "task_submission"
     st.session_state.submitted = False
 
 def go_to_welcome():
-    """Navigate back to the welcome page."""
     st.session_state.page = "welcome"
 
 def reset_submission():
-    """Reset the submission state and navigate to the task submission page."""
     st.session_state.submitted = False
     st.session_state.page = "task_submission"
 
-def handle_submission(data, trainer_name):
-    """Upload data and navigate to the success page."""
-    try:
-        upload_to_gsheet(GOOGLE_SHEETS_URL, trainer_name, data)
-        st.session_state.submitted = True
-        st.session_state.page = "submission_success"
-    except Exception as e:
-        st.error(f"Error uploading to Google Sheets: {e}")
+def handle_submission(ist_date, pst_date, task_link, is_rework, trainer_name):
+    if not task_link.strip():
+        st.error("Task Link is required. Please provide a valid link.")
+    else:
+        # Prepare the row data
+        row_data = [
+            ist_date.strftime("%Y-%m-%d"),  # Date in IST
+            task_link,
+            is_rework,  # Yes or No for Rework
+            pst_date.strftime("%Y-%m-%d")  # Date in PST
+        ]
+        try:
+            upload_to_gsheet(GOOGLE_SHEETS_URL, trainer_name, row_data)
+            st.session_state.submitted = True
+            st.session_state.page = "submission_success"
+        except Exception as e:
+            st.error(f"Error uploading to Google Sheets: {e}")
 
 # Initialize session state
 if "page" not in st.session_state:
@@ -86,23 +101,15 @@ elif st.session_state.page == "task_submission":
 
     # Submission Form
     with st.form("sheet_update_form"):
-        date = st.date_input("Date", value=datetime.today())
+        date = st.date_input("Date (IST)", value=datetime.today())  # IST Date Input
         task_link = st.text_input("Task Link (Required)")
         is_rework = st.radio("Is this task a rework?", options=["No", "Yes"], index=0)
 
+        # Submit button callback
         submitted = st.form_submit_button("Submit")
         if submitted:
-            if not task_link.strip():
-                st.error("Task Link is required. Please provide a valid link.")
-            else:
-                st.info("Submitting task... Please click 'Submit' again to confirm.")
-                row_data = [
-                    date.strftime("%Y-%m-%d"),  # Format the date
-                    task_link,
-                    is_rework  # Yes or No for Rework
-                ]
-                handle_submission(row_data, trainer_name)
-                st.stop()  # Ensures no further code executes after submission
+            pst_date = convert_ist_to_pst(date)  # Convert IST to PST
+            handle_submission(date, pst_date, task_link, is_rework, trainer_name)
 
 # Page: Submission Success
 elif st.session_state.page == "submission_success":
@@ -112,10 +119,9 @@ elif st.session_state.page == "submission_success":
         unsafe_allow_html=True,
     )
     st.markdown(
-    f'<p style="text-align: center; font-size: 16px;">Your data has been successfully submitted. If you need to make changes, click below:</p>'
-    f'<p style="text-align: center;"><a href="{GOOGLE_SHEETS_URL}" target="_blank">Edit manually in Google Sheets</a></p>',
-    unsafe_allow_html=True,
-)
-
+        f'<p style="text-align: center; font-size: 16px;">Your data has been successfully submitted. If you need to make changes, click below:</p>'
+        f'<p style="text-align: center;"><a href="{GOOGLE_SHEETS_URL}" target="_blank">Edit manually in Google Sheets</a></p>',
+        unsafe_allow_html=True,
+    )
     st.button("Submit Another Task", on_click=reset_submission)
     st.button("Back to Welcome", on_click=go_to_welcome)

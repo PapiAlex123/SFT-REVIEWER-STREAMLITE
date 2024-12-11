@@ -104,6 +104,7 @@ elif st.session_state.page == "task_submission":
             if not task_link.strip():
                 st.error("Task Link is required. Please provide a valid link.")
             else:
+                st.info("Submitting task... Please click 'Submit' again to confirm.")
                 # Convert IST to PST
                 pst_date = convert_ist_to_pst(date)
                 row_data = [

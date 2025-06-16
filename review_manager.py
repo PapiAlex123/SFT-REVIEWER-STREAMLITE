@@ -49,7 +49,7 @@ def upload_username(username, worksheet):
 
 st.title("📋 TikTok Username Submission")
 
-username_input = st.text_input("Enter TikTok username (without @):")
+username_input = st.text_input("Enter TikTok username:")
 
 if st.button("Submit Username"):
     if not username_input.strip():
